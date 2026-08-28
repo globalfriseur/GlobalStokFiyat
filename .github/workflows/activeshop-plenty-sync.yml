@@ -1,11 +1,10 @@
-name: ActiveShop to Plenty PRICE Sync V8
+name: ActiveShop to Plenty PRICE Sync V9
 
 on:
   workflow_dispatch:
   schedule:
-    # GitHub cron UTC kullanir. Fiyat turu mevcut yaklasik hizda kalir:
-    # gunde 6 kez x 300 = 1.800 urun/gun, tam fiyat turu yaklasik 2 gun.
-    # Stok workflow'undan 30 dakika ayridir.
+    # GitHub cron UTC kullanir.
+    # Gunde 6 kez x 300 = 1.800 urun/gun.
     - cron: "41 1,5,9,13,17,21 * * *"
 
 permissions:
@@ -21,42 +20,82 @@ jobs:
     timeout-minutes: 120
 
     env:
+      # =====================================================
+      # ACTIVESHOP
+      # =====================================================
       ACTIVESHOP_HOST: https://b2b.activeshop.com.pl
       ACTIVESHOP_STORE_CODE: B2B_PL_de
+
       ACTIVESHOP_USERNAME: ${{ secrets.ACTIVESHOP_USERNAME }}
       ACTIVESHOP_PASSWORD: ${{ secrets.ACTIVESHOP_PASSWORD }}
       ACTIVESHOP_PROXY_URL: ${{ secrets.ACTIVESHOP_PROXY_URL }}
 
+      # =====================================================
+      # PLENTY
+      # =====================================================
       PLENTY_BASE_URL: ${{ secrets.PLENTY_BASE_URL }}
       PLENTY_USERNAME: ${{ secrets.PLENTY_USERNAME }}
       PLENTY_PASSWORD: ${{ secrets.PLENTY_PASSWORD }}
 
+      # false = DRY RUN
+      # true  = Plenty'ye gercekten yazar
       PLENTY_ENABLE_WRITE: ${{ vars.PLENTY_ENABLE_WRITE || 'false' }}
+
+      # ActiveShop net B2B fiyatini Plenty alis fiyatina yaz
       UPDATE_PURCHASE_PRICE: ${{ vars.UPDATE_PURCHASE_PRICE || 'true' }}
+
+      # Bu workflow stok guncellemez
       UPDATE_STOCK: "false"
+
+      # Plenty satis fiyatini guncelle
       UPDATE_SALES_PRICE: ${{ vars.UPDATE_SALES_PRICE || 'false' }}
 
+      # Plenty'deki kullanilacak satis fiyati ID
       PLENTY_SALES_PRICE_ID: ${{ vars.PLENTY_SALES_PRICE_ID }}
 
+      # =====================================================
+      # ALIS FIYATI
+      # =====================================================
+      # ActiveShop net B2B fiyat = Plenty purchasePrice
       PURCHASE_PRICE_MULTIPLIER: ${{ vars.PURCHASE_PRICE_MULTIPLIER || '1.0' }}
       PURCHASE_PRICE_ADD: ${{ vars.PURCHASE_PRICE_ADD || '0.0' }}
-      SALES_PRICE_MULTIPLIER: ${{ vars.SALES_PRICE_MULTIPLIER || '1.3685' }}
+
+      # =====================================================
+      # SATIS FIYATI
+      # =====================================================
+      # Formul:
+      # ActiveShop net fiyat x 1.25 x 1.19
+      #
+      # Ornek:
+      # 15.32 x 1.25 x 1.19 = 22.79 EUR
+      # 266.97 x 1.25 x 1.19 = 397.12 EUR
+
+      SALES_PRICE_PROFIT_RATE: ${{ vars.SALES_PRICE_PROFIT_RATE || '0.25' }}
+      SALES_PRICE_VAT_RATE: ${{ vars.SALES_PRICE_VAT_RATE || '0.19' }}
       SALES_PRICE_ADD: ${{ vars.SALES_PRICE_ADD || '0.0' }}
 
+      # =====================================================
+      # DOSYALAR
+      # =====================================================
       INPUT_CSV: input/Global Fiyat Guncelleme.csv
       OUTPUT_CSV: output/price_sync.csv
       FAILED_CSV: output/price_failed_products.csv
       SUMMARY_JSON: output/price_run_summary.json
       STATE_JSON: state/price_sync_progress.json
 
+      # =====================================================
+      # CALISMA AYARLARI
+      # =====================================================
       MAX_PRODUCTS_PER_RUN: "300"
       MAX_RUN_MINUTES: "100"
       CHECKPOINT_EVERY: "25"
+
       ACTIVESHOP_REQUEST_SLEEP: "0.90"
       ACTIVESHOP_REQUEST_JITTER: "0.25"
       ACTIVESHOP_RATE_RETRIES: "4"
       ACTIVESHOP_RATE_BASE_WAIT: "20"
       ACTIVESHOP_RATE_MAX_WAIT: "180"
+
       PLENTY_WRITE_INTERVAL: "1.70"
       PLENTY_MAX_RETRIES: "5"
 
@@ -73,7 +112,9 @@ jobs:
           cache: pip
 
       - name: Kutuphaneleri kur
-        run: python -m pip install --upgrade pip && pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: CSV ve fiyat ayarlarini kontrol et
         run: python run_sync.py --validate-only
@@ -100,7 +141,13 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- output/price_sync.csv output/price_failed_products.csv output/price_run_summary.json state/price_sync_progress.json
+
+          git add -- \
+            output/price_sync.csv \
+            output/price_failed_products.csv \
+            output/price_run_summary.json \
+            state/price_sync_progress.json
+
           if git diff --cached --quiet; then
             echo "Degisiklik yok; commit olusturulmadi."
           else
