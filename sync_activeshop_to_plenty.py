@@ -18,7 +18,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 
-APP_VERSION = 8
+APP_VERSION = 9
 
 
 # ==========================================================
@@ -1277,6 +1277,11 @@ def main() -> int:
     log(f"ActiveShop -> Plenty Direct Sync V{APP_VERSION} basladi")
     log(f"Yazma modu: {'ACIK' if PLENTY_ENABLE_WRITE else 'KAPALI (DRY RUN)'}")
     log(f"Purchase price: {UPDATE_PURCHASE_PRICE} | Stock: {UPDATE_STOCK} | Sales price: {UPDATE_SALES_PRICE}")
+    log(
+        f"Sales formula: ActiveShop net x {1.0 + SALES_PRICE_PROFIT_RATE:.4f} "
+        f"(profit {SALES_PRICE_PROFIT_RATE * 100:.2f}%) x {1.0 + SALES_PRICE_VAT_RATE:.4f} "
+        f"(VAT {SALES_PRICE_VAT_RATE * 100:.2f}%) + {SALES_PRICE_ADD:.2f} EUR"
+    )
     log("====================================================")
 
     rows = read_input_rows()
@@ -1363,15 +1368,25 @@ def main() -> int:
             break
 
         status = row.get("overall_status", "")
+        price_details = (
+            f"ActiveShop={row.get('source_price_diamond')} EUR | "
+            f"Plenty EK eski={row.get('plenty_old_purchase_price')} EUR | "
+            f"Plenty EK hedef={row.get('plenty_target_purchase_price')} EUR | "
+            f"Plenty VK hedef={row.get('plenty_target_sales_price')} EUR | "
+            f"purchase={row.get('purchase_price_status')} | "
+            f"sales={row.get('sales_price_status')} | "
+            f"stock={row.get('stock_status')}"
+        )
+
         if status in {"SYNCED", "NO_CHANGE"}:
             success_count += 1
-            log(f"OK | {sku} | {status} | purchase={row.get('purchase_price_status')} | stock={row.get('stock_status')}")
+            log(f"OK | {sku} | {status} | {price_details}")
         elif status == "DRY_RUN_OK":
             dry_run_count += 1
-            log(f"DRY RUN | {sku} | purchase={row.get('purchase_price_status')} | stock={row.get('stock_status')}")
+            log(f"DRY RUN | {sku} | {price_details}")
         else:
             error_count += 1
-            log(f"HATA | {sku} | {status} | {row.get('error', '')[:500]}")
+            log(f"HATA | {sku} | {status} | {price_details} | {row.get('error', '')[:500]}")
 
         current_index += 1
         processed += 1
