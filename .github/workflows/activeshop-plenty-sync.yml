@@ -1,10 +1,18 @@
-name: ActiveShop to Plenty PRICE Sync V9
+name: ActiveShop to Plenty PRICE Sync V10
 
 on:
   workflow_dispatch:
+    inputs:
+      test_sku:
+        description: "Tek urun test etmek icin SKU girin. Bos birakilirsa normal senkron calisir."
+        required: false
+        default: ""
+        type: string
+
   schedule:
     # GitHub cron UTC kullanir.
     # Gunde 6 kez x 300 = 1.800 urun/gun.
+    # Bos SKU ile otomatik olarak kaldigi yerden devam eder.
     - cron: "41 1,5,9,13,17,21 * * *"
 
 permissions:
@@ -50,7 +58,7 @@ jobs:
       # Plenty satis fiyatini guncelle
       UPDATE_SALES_PRICE: ${{ vars.UPDATE_SALES_PRICE || 'false' }}
 
-      # Plenty'deki kullanilacak satis fiyati ID
+      # Shopify icin kullandigimiz Plenty satis fiyat ID
       PLENTY_SALES_PRICE_ID: ${{ vars.PLENTY_SALES_PRICE_ID }}
 
       # =====================================================
@@ -65,6 +73,8 @@ jobs:
       # =====================================================
       # Formul:
       # ActiveShop net fiyat x 1.25 x 1.19
+      #
+      # %25 kar + %19 KDV
       #
       # Ornek:
       # 15.32 x 1.25 x 1.19 = 22.79 EUR
@@ -100,11 +110,17 @@ jobs:
       PLENTY_MAX_RETRIES: "5"
 
     steps:
+      # =====================================================
+      # REPOSITORY
+      # =====================================================
       - name: Repository dosyalarini al
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
+      # =====================================================
+      # PYTHON
+      # =====================================================
       - name: Python kur
         uses: actions/setup-python@v7
         with:
@@ -116,28 +132,76 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # =====================================================
+      # VALIDATION
+      # =====================================================
       - name: CSV ve fiyat ayarlarini kontrol et
         run: python run_sync.py --validate-only
 
+      # =====================================================
+      # FIYAT SENKRONU
+      # =====================================================
       - name: ActiveShop fiyatlarini Plenty ile eslestir
-        run: python run_sync.py
+        shell: bash
+        env:
+          TEST_SKU: ${{ github.event.inputs.test_sku || '' }}
 
+        run: |
+          echo "=============================================="
+          echo "ActiveShop -> Plenty PRICE Sync V10"
+          echo "=============================================="
+
+          if [ -n "$TEST_SKU" ]; then
+
+            echo ""
+            echo "TEK SKU MODU"
+            echo "SKU: $TEST_SKU"
+            echo ""
+            echo "Sadece belirtilen SKU islenecek."
+            echo "Normal senkron ilerlemesi degismeyecek."
+            echo ""
+
+            python run_sync.py --test-sku "$TEST_SKU"
+
+          else
+
+            echo ""
+            echo "NORMAL SENKRON MODU"
+            echo ""
+            echo "Test SKU girilmedi."
+            echo "Senkron kaldigi yerden devam edecek."
+            echo "Bu calismada maksimum 300 urun islenecek."
+            echo ""
+
+            python run_sync.py
+
+          fi
+
+      # =====================================================
+      # ARTIFACT
+      # =====================================================
       - name: Fiyat sonuclarini artifact olarak yukle
         if: always()
         uses: actions/upload-artifact@v6
         with:
           name: activeshop-plenty-price-${{ github.run_number }}
+
           path: |
             output/price_sync.csv
             output/price_failed_products.csv
             output/price_run_summary.json
             state/price_sync_progress.json
+
           if-no-files-found: warn
           retention-days: 30
 
+      # =====================================================
+      # PROGRESS / RAPOR COMMIT
+      # =====================================================
       - name: Fiyat progress ve raporlarini repositoryye kaydet
         if: success()
         shell: bash
+
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -149,9 +213,13 @@ jobs:
             state/price_sync_progress.json
 
           if git diff --cached --quiet; then
+
             echo "Degisiklik yok; commit olusturulmadi."
+
           else
+
             git commit -m "chore: sync ActiveShop prices to Plenty"
             git pull --rebase origin "${GITHUB_REF_NAME}"
             git push origin HEAD:"${GITHUB_REF_NAME}"
+
           fi
