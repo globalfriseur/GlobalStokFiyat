@@ -1,0 +1,19 @@
+{
+  "version": 7,
+  "run_started_at": "2026-08-21T09:01:06.480937+00:00",
+  "run_finished_at": "2026-08-21T09:36:14.426873+00:00",
+  "duration_seconds": 2107.95,
+  "write_enabled": true,
+  "update_purchase_price": true,
+  "update_stock": true,
+  "update_sales_price": true,
+  "processed": 300,
+  "success": 291,
+  "dry_run": 0,
+  "errors": 9,
+  "next_index": 300,
+  "next_sku": "122762",
+  "cycle": 15,
+  "stop_reason": "batch_completed",
+  "output_csv": "output/activeshop_plenty_sync.csv"
+}

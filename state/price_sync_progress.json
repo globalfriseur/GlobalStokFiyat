@@ -1,0 +1,13 @@
+{
+  "version": 7,
+  "input_hash": "3748f81477e2b936f18026d325fcf2adcdec4f4d8848d998ebd4fa66c4211d75",
+  "next_index": 300,
+  "next_sku": "122762",
+  "cycle": 18,
+  "completed_cycles": 17,
+  "last_completed_cycle_at": "2026-08-27T23:19:04.988655+00:00",
+  "last_run_started_at": "2026-08-28T13:21:02.382056+00:00",
+  "last_run_finished_at": "2026-08-28T13:40:35.451758+00:00",
+  "last_stop_reason": "batch_completed",
+  "last_processed_count": 300
+}
