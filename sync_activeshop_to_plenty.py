@@ -18,7 +18,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 
-APP_VERSION = 7
+APP_VERSION = 8
 
 
 # ==========================================================
@@ -74,8 +74,10 @@ UPDATE_SALES_PRICE = os.getenv("UPDATE_SALES_PRICE", "false").strip().lower() in
 PURCHASE_PRICE_MULTIPLIER = float(os.getenv("PURCHASE_PRICE_MULTIPLIER", "1.0"))
 PURCHASE_PRICE_ADD = float(os.getenv("PURCHASE_PRICE_ADD", "0.0"))
 
-# Optional sales-price formula. Disabled by default to avoid selling at supplier cost.
-SALES_PRICE_MULTIPLIER = float(os.getenv("SALES_PRICE_MULTIPLIER", "1.0"))
+# Sales price formula based on ActiveShop B2B net purchase price.
+# Default: +25% profit, then +19% VAT. Example: 266.97 -> 397.12 EUR gross.
+SALES_PRICE_PROFIT_RATE = float(os.getenv("SALES_PRICE_PROFIT_RATE", "0.25"))
+SALES_PRICE_VAT_RATE = float(os.getenv("SALES_PRICE_VAT_RATE", "0.19"))
 SALES_PRICE_ADD = float(os.getenv("SALES_PRICE_ADD", "0.0"))
 
 # Stock behavior
@@ -1047,6 +1049,10 @@ def validate_config(require_credentials: bool = True, require_target_ids: bool =
         errors.append("STOCK_SAFETY_DEDUCTION negatif olamaz")
     if STOCK_MAXIMUM < 0:
         errors.append("STOCK_MAXIMUM negatif olamaz")
+    if SALES_PRICE_PROFIT_RATE < 0:
+        errors.append("SALES_PRICE_PROFIT_RATE negatif olamaz")
+    if SALES_PRICE_VAT_RATE < 0:
+        errors.append("SALES_PRICE_VAT_RATE negatif olamaz")
     if errors:
         raise RuntimeError("Konfigurasyon hatasi: " + "; ".join(errors))
 
@@ -1227,7 +1233,15 @@ def process_one(
         if values.price is None:
             row["sales_price_status"] = "SOURCE_PRICE_MISSING"
         else:
-            target_sales = round_price(values.price * SALES_PRICE_MULTIPLIER + SALES_PRICE_ADD)
+            # ActiveShop price is net B2B purchase price.
+            # Gross sales price = net purchase * (1 + profit) * (1 + VAT) + optional fixed add.
+            target_sales = round(
+                values.price
+                * (1.0 + SALES_PRICE_PROFIT_RATE)
+                * (1.0 + SALES_PRICE_VAT_RATE)
+                + SALES_PRICE_ADD,
+                2,
+            )
             row["plenty_target_sales_price"] = target_sales
             if not PLENTY_ENABLE_WRITE:
                 row["sales_price_status"] = "DRY_RUN_UPSERT"
