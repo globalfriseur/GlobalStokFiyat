@@ -1,13 +1,13 @@
 {
   "version": 9,
   "input_hash": "3748f81477e2b936f18026d325fcf2adcdec4f4d8848d998ebd4fa66c4211d75",
-  "next_index": 1500,
-  "next_sku": "143320",
+  "next_index": 1800,
+  "next_sku": "146695",
   "cycle": 19,
   "completed_cycles": 18,
   "last_completed_cycle_at": "2026-08-30T10:02:24.402123+00:00",
-  "last_run_started_at": "2026-08-31T05:46:05.724552+00:00",
-  "last_run_finished_at": "2026-08-31T06:07:16.082403+00:00",
+  "last_run_started_at": "2026-08-31T09:46:05.510834+00:00",
+  "last_run_finished_at": "2026-08-31T10:08:15.457812+00:00",
   "last_stop_reason": "batch_completed",
   "last_processed_count": 300
 }
