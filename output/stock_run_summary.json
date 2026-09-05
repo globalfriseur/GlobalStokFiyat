@@ -1,8 +1,8 @@
 {
   "version": 8,
-  "run_started_at": "2026-09-05T13:20:06.106504+00:00",
-  "run_finished_at": "2026-09-05T13:44:44.686604+00:00",
-  "duration_seconds": 1478.58,
+  "run_started_at": "2026-09-05T14:20:03.868888+00:00",
+  "run_finished_at": "2026-09-05T14:44:54.942417+00:00",
+  "duration_seconds": 1491.07,
   "write_enabled": true,
   "update_purchase_price": false,
   "update_stock": true,
@@ -11,8 +11,8 @@
   "success": 200,
   "dry_run": 0,
   "errors": 0,
-  "next_index": 200,
-  "next_sku": "114850",
+  "next_index": 400,
+  "next_sku": "123899",
   "cycle": 18,
   "stop_reason": "batch_completed",
   "output_csv": "output/stock_sync.csv"
