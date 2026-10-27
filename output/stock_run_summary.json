@@ -1,8 +1,8 @@
 {
   "version": 8,
-  "run_started_at": "2026-10-27T05:00:14.993158+00:00",
-  "run_finished_at": "2026-10-27T05:00:29.990767+00:00",
-  "duration_seconds": 15.0,
+  "run_started_at": "2026-10-27T10:29:10.410762+00:00",
+  "run_finished_at": "2026-10-27T10:29:27.556774+00:00",
+  "duration_seconds": 17.15,
   "write_enabled": true,
   "update_purchase_price": false,
   "update_stock": true,
