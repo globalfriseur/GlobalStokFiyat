@@ -6,8 +6,8 @@
   "cycle": 28,
   "completed_cycles": 27,
   "last_completed_cycle_at": "2026-09-16T03:38:05.677519+00:00",
-  "last_run_started_at": "2026-11-15T21:43:47.881188+00:00",
-  "last_run_finished_at": "2026-11-15T21:44:04.086558+00:00",
+  "last_run_started_at": "2026-11-16T01:57:25.574354+00:00",
+  "last_run_finished_at": "2026-11-16T01:57:41.146528+00:00",
   "last_stop_reason": "activeshop_rate_limit",
   "last_processed_count": 0
 }
